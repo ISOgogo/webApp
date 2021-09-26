@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>kullanici Sayfasi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+    <strong>KULLANICI:</strong> {{ user }} <br>
+    <h1>Bot Ayarları:</h1>
+
+    <form action="/bot" method="post">
+        <input type="text" name="coin" placeholder="COIN"> <br>
+        <input type="text" name="step" placeholder="Fiyat Aralığı"> <br>
+        <input type="text" name="unit" placeholder="İşlem Büyüklüğü"> <br>
+        <input type="text" name="grids" placeholder="Kademe Sayısı"> <br> <br>
+        
+        <input type="submit" value="BAŞLAT">
+    </form>
+</body>
+</html>

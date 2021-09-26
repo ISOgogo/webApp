@@ -1,0 +1,34 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Form Yapısı</title>
+</head>
+<body>
+
+    {% for message in get_flashed_messages() %}
+    <h1>
+        <div class="alert-error">Hata: {{ message }}</div><br>
+    </h1>
+    {% endfor %}
+    <form action="/kullanici" method="post">
+
+        <text> Yeni Kullanıcı Kayıdı  </text> <br> <br>
+
+        <input type="text" name="user" placeholder="Kullanıcı Adı"> <br>
+        <input type="text" name="api" placeholder="API key"> <br>
+        <input type="text" name="secret" placeholder="SECRET key"> <br> 
+        <br>
+        <input type="submit" value="Gönder">
+    </form>
+
+    <form action="/kullanici" method="post">
+
+        <text> Giriş  </text> <br> <br>
+
+        <input type="text" name="user" placeholder="Kullanıcı Adı"> <br>   
+        <br>
+        <input type="submit" value="Gönder">
+    </form>
+
+</body>
+</html>
