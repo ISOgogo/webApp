@@ -7,17 +7,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-
+    <a href= {{url_for('index')}} >Ana Sayfa </a> <br><br>
     <strong>KULLANICI:</strong> {{ user }} <br>
     <h1>Bot Ayarları:</h1>
-
-    <form action="/bot" method="post">
-        <input type="text" name="coin" placeholder="COIN"> <br>
-        <input type="text" name="step" placeholder="Fiyat Aralığı"> <br>
-        <input type="text" name="unit" placeholder="İşlem Büyüklüğü"> <br>
-        <input type="text" name="grids" placeholder="Kademe Sayısı"> <br> <br>
-        
-        <input type="submit" value="BAŞLAT">
-    </form>
+    <div style="display:flex">
+        <form action="/bot?user={{user}}" method="post">
+            <input type="text" name="coin" placeholder="COIN"> <br>
+            <div style="display:flex">
+            <input type="text" name="step" placeholder="Fiyat Aralığı"> <br>
+            <input type="checkbox" name="yuzde" value="yuzde"> Yüzdelik
+            </div>
+            <input type="text" name="unit" placeholder="İşlem Büyüklüğü"> <br>
+            <input type="text" name="grids" placeholder="Kademe Sayısı"> <br> <br>
+            
+            <input type="submit" value="BAŞLAT">
+        </form>
+        {% if bot_control %}
+            <form style="margin-left: 30px;" action="/bot?user={{user}}" method="post">
+            <label for = "show">Botunuz Aktif!</label><br>
+            <input id = "show" type="submit" value="Botu Görüntüle">
+        {% else %}
+            <text style="margin-left: 30px;">Aktif Bir Botunuz Bulunmamakta !</text>
+            {% endif %}  
+    </div>
 </body>
 </html>

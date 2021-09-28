@@ -5,11 +5,25 @@
     
 </head>
 <body>
-    <h2>Son 10 İşlem</h2>
-    <h3>{{c}}</h3>
-    <form action="/stop" method="post">
-        <input type="submit" value="Durdur">
+    <div style="display:flex">
+    {% if is_alive %}
+    <form action="/bot" method="POST">
+        <input type="submit" name = "stop" value="Durdur">
     </form>
-    
+    {% endif %}
+    <form action="/bot" method="POST">
+        <input type="submit" name = "return" value="Geri Dön">
+    </form>
+    </div>
+    <h1>Günlük Rapor</h1>
+    <h2>Brüt Kazanç    |   Net Kazanç   |  Komisyon</h2>
+    <text>{{profit_per_sell * report[2]}}    |   {{report[0]}}    | {{report[1]}}  USDT</text>
+    <h2>Son 20 İşlem</h2>
+    <ul>
+    {% for trade in trades%}
+        <li>{{trade["time"]}} | {{trade["side"]}} Fiyatı: {{trade["price"]}} | Miktar: {{trade["qty"]}}
+            | Komisyon: {{trade["commission"]}} </li>
+    {% endfor %}
+    </ul>
 </body>
 </html>

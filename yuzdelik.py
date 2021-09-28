@@ -19,8 +19,7 @@ def bot(symbol, step, unit, grids, api, secret):
     symbol = symbol + "USDT"
     last_tradeId = Decimal(0)
     kirik_list = []
-    
-    
+
     try:
         client.change_margin_type(symbol=symbol, marginType=FuturesMarginType.ISOLATED)
     except:
@@ -46,24 +45,22 @@ def bot(symbol, step, unit, grids, api, secret):
             ordertype=OrderType.MARKET, quantity=unit*5)
         buy_price = client.get_mark_price(symbol = symbol).markPrice
         
+        curr_price = buy_price
         for i in range(1,6):
-            sell = make_order(OrderSide.SELL, Decimal("%.2f" % (buy_price + step*i)), unit)
+            curr_price = curr_price*(100+step)/100
+            sell = make_order(OrderSide.SELL, Decimal("%.2f" % curr_price), unit)
         return buy_price
 
     def initialize():
         nonlocal last_tradeId, kirik_list
         kirik_list = []
-        price = bulk_buy()
+
+        curr_price = bulk_buy()
         for i in range(1, grids+1):
-            buy = make_order(OrderSide.BUY, Decimal("%.2f" % (price - step*i)), unit)
+            curr_price = curr_price*100/(100+step)
+            buy = make_order(OrderSide.BUY, Decimal("%.2f" % curr_price), unit)
         last_tradeId = client.get_account_trades(symbol=symbol, limit=1)[0].id
 
-    def find_in_openOrders(price):
-        orders = client.get_open_orders(symbol=symbol)
-        for order in orders:
-            if float(order.price) == float(price):
-                return True
-        return False
     def findmin_openOrders():
         orders = client.get_open_orders(symbol=symbol)
         price = Decimal(999999999)
@@ -85,22 +82,20 @@ def bot(symbol, step, unit, grids, api, secret):
         for index, sym in enumerate(client.get_position_v2() ):   #Açık pozisyonumuzda ne kadar bakiye olduğunu 
             if sym.symbol == symbol:                              #hızlıca görmek için indexini buluyoruz
                 return index
-        return symbol_index
     #################################################################################################
 
     delete_buy_orders()
     initialize()
-    
-    while True:    
-        symbol_index = sym_index()
+
+    while True:
+        symbol_index = sym_index()	
         if client.get_position_v2()[symbol_index].positionAmt <= 0:
             client.cancel_all_orders(symbol=symbol)
             initialize() 
-
-        # limit yerine orderId kullanılabiliyor değiştir çok daha verimli olacak    
+            
         curr_trades = client.get_account_trades(symbol=symbol, fromId=last_tradeId)[1:]
         # Ani fiyat değişimlerinde çok order aynı anda fill oluyor bazen for döngüsü ile incelenebilir
-
+        
         for curr_trade in curr_trades:
 
             order = client.get_order(symbol=symbol, orderId=curr_trade.orderId)
@@ -115,24 +110,26 @@ def bot(symbol, step, unit, grids, api, secret):
 
             if curr_trade.side == "SELL":  #Eğer son trade satış ise bir aşağı kademeye alış ver
                 
-                buy = make_order(OrderSide.BUY, Decimal("%.2f" % (price - step)), unit )               
+                buy = make_order(OrderSide.BUY, Decimal("%.2f" % (price*100/(100+step))), unit )               
 
-                if findmin_openOrders()[1] > grids:  #eğer gridden fazla buy order var ise en küçüğü iptal et
-                    deleted = None
-                    for i in range(10):
-                        try:
-                            deleted = client.cancel_order(symbol=symbol, orderId=findmin_openOrders()[0] )
-                        except:
-                            pass
-                        if deleted:
-                            break
-            
+                deleted = None
+                for i in range(10):
+                    try:
+                        deleted = client.cancel_order(symbol=symbol, orderId=findmin_openOrders()[0] )
+                    except:
+                        pass
+                    if deleted:
+                        break
+                
+
                                         
             if curr_trade.side == "BUY": #Eğer son trade alış ise en aşağı kademeye alış ver ve bir üste satış koy
-                sell = make_order(OrderSide.SELL, Decimal("%.2f" % (price + step)), unit )
-                found = find_in_openOrders(price - step*grids)
-                if not found: 
-                    buy = make_order(OrderSide.BUY, Decimal("%.2f" % (price - step*grids)) , unit )
+                sell = make_order(OrderSide.SELL, Decimal("%.2f" % (price*(100+step)/100) ), unit )
+                
+                curr_price = price
+                for i in range(grids):
+                    curr_price = curr_price/(100+step)*100
+                buy = make_order(OrderSide.BUY, Decimal("%.2f" %   curr_price ) , unit )
                 
         if curr_trades:
             last_tradeId = curr_trades[-1].id
