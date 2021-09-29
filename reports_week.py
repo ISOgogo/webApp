@@ -5,14 +5,14 @@ from binance_f.model.constant import *
 from decimal import *
 import time, sys, datetime
 
-def reports(symbol, api, secret, step):
+def reports(symbol, api, secret):
     client = RequestClient(api_key=api, secret_key=secret, url="https://testnet.binancefuture.com")
     now = client.get_servertime()
     now_dt = datetime.datetime.fromtimestamp(int(now)/1000)
-    start_dt = now_dt - datetime.timedelta(days=1)
+    start_dt = now_dt - datetime.timedelta(days=7)
     start = datetime.datetime.timestamp(start_dt)*1000
     curr_trades = client.get_account_trades(symbol=symbol+"USDT", startTime=start, endTime=now )
-    
+
     realized_pnl = 0
     commission = 0
     sell_count = 0

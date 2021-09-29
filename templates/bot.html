@@ -5,6 +5,7 @@
     
 </head>
 <body>
+    
     <div style="display:flex">
     {% if is_alive %}
     <form action="/bot" method="POST">
@@ -14,10 +15,11 @@
     <form action="/bot" method="POST">
         <input type="submit" name = "return" value="Geri Dön">
     </form>
+    <h1 style="margin-top: 50px;">BOT AKTİF !!! </h1>
     </div>
-    <h1>Günlük Rapor</h1>
-    <h2>Brüt Kazanç    |   Net Kazanç   |  Komisyon</h2>
-    <text>{{profit_per_sell * report[2]}}    |   {{report[0]}}    | {{report[1]}}  USDT</text>
+    <h2>Son 24 Saat</h1>
+    <h2>Bot Satış Sayısı    |   Net Kazanç   |  Komisyon</h2>
+    <text>{{report[2]}}    |   {{report[0]}}    | {{report[1]}}  USDT</text>
     <h2>Son 20 İşlem</h2>
     <ul>
     {% for trade in trades%}

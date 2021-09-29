@@ -112,6 +112,8 @@ def bot(symbol, step, unit, grids, api, secret):
                 
                 
             price = float(order.price)
+            if price == 0:
+                continue
 
             if curr_trade.side == "SELL":  #Eğer son trade satış ise bir aşağı kademeye alış ver
                 

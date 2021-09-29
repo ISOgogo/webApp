@@ -7,6 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+    {% for message in get_flashed_messages() %}
+    <h1>
+        <div class="alert-error">Hata: {{ message }}</div><br>
+    </h1>
+    {% endfor %}
+
     <a href= {{url_for('index')}} >Ana Sayfa </a> <br><br>
     <strong>KULLANICI:</strong> {{ user }} <br>
     <h1>Bot Ayarları:</h1>
@@ -29,6 +35,10 @@
         {% else %}
             <text style="margin-left: 30px;">Aktif Bir Botunuz Bulunmamakta !</text>
             {% endif %}  
+            <form style="margin-left: 50px;" action="/raporlar/{{user}}" merhod="post">
+                <input id = "show" type="submit" value="Raporlarımı Görüntüle">
+            </form>
+
     </div>
 </body>
 </html>

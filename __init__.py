@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, flash, redirect, session
-import os, signal, time
+import os, signal, time, pickle
 from multiprocessing import Process
-import yuzdelik, r10_futures, last_trades, reports
+import yuzdelik, r10_futures, last_trades, reports_week, reports_day
 
-app = Flask(__name__)
+app = Flask(__name__)   
 app.secret_key = "super secret key"
 
-users = {}
+with open('users_data.pckl','rb') as users_data:
+    users = pickle.load(users_data)
+
 curr_user = ""
 bot = None
 
@@ -25,8 +27,10 @@ def kullanici():
         secret      = request.form.get("secret")
 
         if curr_user and api and secret:
-            users[curr_user] = {"api":api, "secret":secret}
-            
+            with open('users_data.pckl','wb') as users_data:
+                users[curr_user] = {"api":api, "secret":secret}
+                pickle.dump(users, users_data)
+
         elif not users.get(curr_user):   
             flash("Kullanıcı Bulunamadı")
             return redirect("/")
@@ -67,12 +71,30 @@ def bot():
         function =  yuzdelik.bot if yuzde else r10_futures.bot
         bot = Process(target= function, args=(symbol,step,unit,grids,api,secret))
         bot.start()
-        users[user] = {"api":api,"secret":secret,"symbol":symbol,"step":float(step),
+
+        with open('users_data.pckl','wb') as users_data:
+                users[user] = {"api":api,"secret":secret,"symbol":symbol,"step":float(step),
                     "unit":float(unit),"grids":int(grids),"pid":bot.pid}
+                pickle.dump(users, users_data)
         
     
     c_bot = users[user]
     return render_template("bot.html", 
     trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]), 
-    report = reports.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["step"]), 
-    profit_per_sell = c_bot["step"]*c_bot["unit"], user = curr_user, is_alive = bot.is_alive())
+    report = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"]), 
+    user = curr_user, is_alive = bot.is_alive())
+
+@app.route("/raporlar/<user>", methods=["POST","GET"])
+def raporlar(user):
+    c_bot = users[user]
+    try:
+        sym = c_bot["symbol"]
+    except:
+        flash("Daha Önce Bot Akif Etmediniz !")
+        return redirect(f"/kullanici?user={user}")
+
+    day  = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
+    week = reports_week.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
+    trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]) 
+
+    return render_template("rapor.html", user = user, day = day, week = week, trades = trades)

@@ -1,0 +1,33 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Raporlarım</title>
+    
+</head>
+<body>
+    
+    <form action="/kullanici?user={{user}}" method="POST">
+        <input type="submit" name = "return" value="Geri Dön">
+    </form>
+    <div style="display:flex">
+        <div>
+            <h1>Son 24 Saat</h1>
+            <h3>Bot Satış Sayısı  |  Komisyon  | Net Kazanç </h3>
+            <h3>{{day[2]}}  | {{day[1]}}  | {{day[0]}}  USDT</h3>
+        </div>
+        <div style="margin-left: 100px;">
+            <h1>Son 7 Gün</h1>
+            <h3>Bot Satış Sayısı | Komisyon | Net Kazanç </h3>
+            <h3>{{week[2]}} | {{week[1]}} | {{week[0]}}  USDT</h3>
+        </div>
+    </div>
+
+    <h2>Son 20 İşlem</h2>
+    <ul>
+    {% for trade in trades%}
+        <li>{{trade["time"]}} | {{trade["side"]}} Fiyatı: {{trade["price"]}} | Miktar: {{trade["qty"]}}
+            | Komisyon: {{trade["commission"]}} </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>
