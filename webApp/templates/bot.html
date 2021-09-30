@@ -8,11 +8,11 @@
     
     <div style="display:flex">
     {% if is_alive %}
-    <form action="/bot" method="POST">
+    <form action="/bot?user={{user}}" method="POST">
         <input type="submit" name = "stop" value="Durdur">
     </form>
     {% endif %}
-    <form action="/bot" method="POST">
+    <form action="/bot?user={{user}}" method="POST">
         <input type="submit" name = "return" value="Geri Dön">
     </form>
     <h1 style="margin-top: 50px;">BOT AKTİF !!! </h1>

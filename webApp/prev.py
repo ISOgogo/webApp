@@ -6,10 +6,9 @@ import yuzdelik, r10_futures, last_trades, reports_week, reports_day
 app = Flask(__name__)   
 app.secret_key = "super secret key"
 
-with open('users_data.pckl','rb') as users_data:
+with open('/var/www/webApp/users_data.pckl','rb') as users_data:
     users = pickle.load(users_data)
 
-curr_user = ""
 bot = None
 
 @app.route("/")
@@ -18,7 +17,7 @@ def index():
 
 @app.route("/kullanici", methods=["POST", "GET"])
 def kullanici():
-    global users, curr_user
+    global users
     curr_user = request.args.get("user")
 
     if not curr_user:
@@ -27,19 +26,22 @@ def kullanici():
         secret      = request.form.get("secret")
 
         if curr_user and api and secret:
-            with open('users_data.pckl','wb') as users_data:
+            with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
                 users[curr_user] = {"api":api, "secret":secret}
                 pickle.dump(users, users_data)
 
         elif not users.get(curr_user):   
             flash("Kullanıcı Bulunamadı")
             return redirect("/")
-
-    session["curr_user"] = users[curr_user]
-    
-    try:
-        bot_control = bot.is_alive()
-    except:
+        
+    pid =  users[curr_user].get("pid")
+    if pid:
+        try:
+            os.kill(pid, 0)
+            bot_control = True
+        except:
+            cot_control = False
+    else:
         bot_control = False
 
     return render_template("kullanici.html", user = curr_user, bot_control = bot_control )
@@ -47,18 +49,20 @@ def kullanici():
 @app.route("/bot", methods=["POST","GET"])
 def bot():
     global bot
-    if request.form.get("return"):
-        return redirect(f"/kullanici?user={curr_user}")
-    if request.form.get("stop"):
-        while bot.is_alive():
-            os.system(f"kill -9 {bot.pid}")
 
     user   =    request.args.get("user")
     if not user:
         user = curr_user
-    
-    api    =    session.get('curr_user')["api"]
-    secret =    session.get('curr_user')["secret"]
+
+    if request.form.get("return"):
+        return redirect(f"/kullanici?user={user}")
+    if request.form.get("stop"):
+        while bot.is_alive():
+            os.system(f"kill -9 {users[user]['pid']}")
+
+    print(users)    
+    api    =    users[user]["api"]
+    secret =    users[user]["secret"]
 
     symbol =    request.form.get("coin")
     step   =    request.form.get("step")
@@ -72,7 +76,7 @@ def bot():
         bot = Process(target= function, args=(symbol,step,unit,grids,api,secret))
         bot.start()
 
-        with open('users_data.pckl','wb') as users_data:
+        with open('/var/www/webApp/users_data.pckl','wb') as users_data:
                 users[user] = {"api":api,"secret":secret,"symbol":symbol,"step":float(step),
                     "unit":float(unit),"grids":int(grids),"pid":bot.pid}
                 pickle.dump(users, users_data)
@@ -82,7 +86,7 @@ def bot():
     return render_template("bot.html", 
     trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]), 
     report = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"]), 
-    user = curr_user, is_alive = bot.is_alive())
+    user = user, is_alive = bot.is_alive())
 
 @app.route("/raporlar/<user>", methods=["POST","GET"])
 def raporlar(user):
