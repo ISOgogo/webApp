@@ -1,0 +1,31 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Bot Aktif</title>
+    
+</head>
+<body>
+    
+    <div style="display:flex">
+    {% if is_alive %}
+    <form action="/bot?user={{user}}" method="POST">
+        <input type="submit" name = "stop" value="Durdur">
+    </form>
+    {% endif %}
+    <form action="/bot?user={{user}}" method="POST">
+        <input type="submit" name = "return" value="Geri Dön">
+    </form>
+    <h1 style="margin-top: 50px;">BOT AKTİF !!! </h1>
+    </div>
+    <h2>Son 24 Saat</h1>
+    <h2>Bot Satış Sayısı    |   Net Kazanç   |  Komisyon</h2>
+    <text>{{report[2]}}    |   {{report[0]}}    | {{report[1]}}  USDT</text>
+    <h2>Son 20 İşlem</h2>
+    <ul>
+    {% for trade in trades%}
+        <li>{{trade["time"]}} | {{trade["side"]}} Fiyatı: {{trade["price"]}} | Miktar: {{trade["qty"]}}
+            | Komisyon: {{trade["commission"]}} </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

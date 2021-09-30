@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>kullanici Sayfasi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    {% for message in get_flashed_messages() %}
+    <h1>
+        <div class="alert-error">Hata: {{ message }}</div><br>
+    </h1>
+    {% endfor %}
+
+    <a href= {{url_for('index')}} >Ana Sayfa </a> <br><br>
+    <strong>KULLANICI:</strong> {{ user }} <br>
+    <h1>Bot Ayarları:</h1>
+    <div style="display:flex">
+        <form action="/bot?user={{user}}" method="post">
+            <input type="text" name="coin" placeholder="COIN"> <br>
+            <div style="display:flex">
+            <input type="text" name="step" placeholder="Fiyat Aralığı"> <br>
+            <input type="checkbox" name="yuzde" value="yuzde"> Yüzdelik
+            </div>
+            <input type="text" name="unit" placeholder="İşlem Büyüklüğü"> <br>
+            <input type="text" name="grids" placeholder="Kademe Sayısı"> <br> <br>
+            
+            <input type="submit" value="BAŞLAT">
+        </form>
+        {% if bot_control %}
+            <form style="margin-left: 30px;" action="/bot?user={{user}}" method="post">
+            <label for = "show">Botunuz Aktif!</label><br>
+            <input id = "show" type="submit" value="Botu Görüntüle">
+        {% else %}
+            <text style="margin-left: 30px;">Aktif Bir Botunuz Bulunmamakta !</text>
+        {% endif %}  
+            <form style="margin-left: 50px;" action="/raporlar/{{user}}" method="post">
+                <input id = "show" type="submit" value="Raporlarımı Görüntüle">
+            </form>
+
+    </div>
+</body>
+</html>
