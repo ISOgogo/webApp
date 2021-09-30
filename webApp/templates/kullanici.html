@@ -32,11 +32,12 @@
             <form style="margin-left: 30px;" action="/bot?user={{user}}" method="post">
             <label for = "show">Botunuz Aktif!</label><br>
             <input id = "show" type="submit" value="Botu Görüntüle">
+            </form>
         {% else %}
             <text style="margin-left: 30px;">Aktif Bir Botunuz Bulunmamakta !</text>
         {% endif %}  
             <form style="margin-left: 50px;" action="/raporlar/{{user}}" method="post">
-                <input id = "show" type="submit" value="Raporlarımı Görüntüle">
+                <input type="submit" value="Raporlarımı Görüntüle">
             </form>
 
     </div>

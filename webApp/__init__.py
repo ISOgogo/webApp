@@ -12,6 +12,7 @@ import reports_day
 
 app = Flask(__name__)
 app.secret_key = "super secret key"
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 users = {}
 bots = {}
@@ -19,26 +20,11 @@ bots = {}
 with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  # /var/www/webApp/
     users = pickle.load(users_data)
 
-# def bot_control(user):
-#    pid =  users[user].get("pid")
-#    if pid:
-#        try:
-#            os.kill(pid, 0)
-#            return True
-#        except:
-#            return False
-#    return False
+
 @app.after_request
-def add_header(r):
-    """
-    Add headers to both force latest IE rendering engine or Chrome Frame,
-    and also to cache the rendered page for 10 minutes.
-    """
-    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    r.headers["Pragma"] = "no-cache"
-    r.headers["Expires"] = "0"
-    r.headers['Cache-Control'] = 'public, max-age=0'
-    return r
+def add_header(response):
+    response.cache_control.max_age = 0
+    return response
 
 @app.route("/")
 def index():
@@ -47,7 +33,7 @@ def index():
 
 @app.route("/kullanici", methods=["POST", "GET"])
 def kullanici():
-    global users
+    global users, bots
     curr_user = request.args.get("user")
     login = ""
     if not curr_user:
@@ -68,8 +54,9 @@ def kullanici():
     if not curr_user:
         curr_user = login
 
-    is_alive = True if bots.get(curr_user) and bots.get(curr_user).is_alive() else False
-    return render_template("kullanici.html", user = curr_user, bot_control=is_alive)
+    is_alive = True if bots.get(curr_user) and bots.get(
+        curr_user).is_alive() else False
+    return render_template("kullanici.html", user=curr_user, bot_control=is_alive)
 
 
 @app.route("/bot", methods=["POST", "GET"])
@@ -81,16 +68,18 @@ def bot():
     if request.form.get("return"):
         return redirect(f"/kullanici?user={user}")
     if request.form.get("stop"):
-        while bots.get(user).is_alive():
-            os.system(f"kill -9 {bots.get(user).pid}")
-   
- 
+        while bots[user].is_alive():
+            try:
+                os.system(f"kill -9 {bots[user].pid}")
+            except:
+                pass
+
     with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:
         users = pickle.load(users_data)
-    
+
     api = users[user]["api"]
     secret = users[user]["secret"]
-   
+
     symbol = request.form.get("coin")
     step = request.form.get("step")
     yuzde = request.form.get("yuzde")
@@ -101,7 +90,9 @@ def bot():
         function = yuzdelik.bot if yuzde else r10_futures.bot
         bot = Process(target=function, args=(
             symbol, step, unit, grids, api, secret))
+        time.sleep(0.3)
         bot.start()
+        time.sleep(1)
         bots[user] = bot
 
         with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
