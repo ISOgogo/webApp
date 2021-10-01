@@ -17,7 +17,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 users = {}
 bots = {}
 
-with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  # /var/www/webApp/
+with open('users_data.pckl', 'rb') as users_data:  # /var/www/webApp/
     users = pickle.load(users_data)
 
 
@@ -36,6 +36,7 @@ def kullanici():
     global users, bots
     curr_user = request.args.get("user", default=None)
     login = ""
+
     if not curr_user:
         curr_user = request.form.get("register")
         login = request.form.get("login")
@@ -44,7 +45,7 @@ def kullanici():
 
         if curr_user and api and secret:
             users[curr_user] = {"api": api, "secret": secret}
-            with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
+            with open('users_data.pckl', 'wb') as users_data:
                 pickle.dump(users, users_data)
 
         elif not users.get(login):
@@ -53,10 +54,19 @@ def kullanici():
 
     if not curr_user:
         curr_user = login
+    
+    is_alive = request.args.get("bot", default = bots.get(curr_user) )
+    if is_alive == "True":                  ##Bu ne biçim kod aq düzelt sonradan
+        is_alive = True
+    elif is_alive == "False": 
+        is_alive = False
+    elif is_alive:
+        is_alive = is_alive.is_alive()
+    else:
+        is_alive = False
 
-    is_alive = True if bots.get(curr_user) and bots.get(
-        curr_user).is_alive() else False
     return render_template("kullanici.html", user=curr_user, bot_control=is_alive)
+    
 
 
 @app.route("/bot", methods=["POST", "GET"])
@@ -73,8 +83,10 @@ def bot():
                 os.system(f"kill -9 {bots[user].pid}")
             except:
                 pass
+        bots.pop(user, None)
+        return redirect(f"/kullanici?user={user}&bot=False")
 
-    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:
+    with open('users_data.pckl', 'rb') as users_data:
         users = pickle.load(users_data)
 
     api = users[user]["api"]
@@ -95,7 +107,7 @@ def bot():
         time.sleep(1)
         bots[user] = bot
 
-        with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
+        with open('users_data.pckl', 'wb') as users_data:
             users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step),
                            "unit": float(unit), "grids": int(grids)}
             pickle.dump(users, users_data)
@@ -114,14 +126,15 @@ def bot():
 @app.route("/raporlar/<user>", methods=["POST", "GET"])
 def raporlar(user):
     c_bot = users[user]
+    is_alive = request.args.get("bot")
     try:
         sym = c_bot["symbol"]
     except:
         flash("Daha Önce Bot Akif Etmediniz !")
-        return redirect(f"/kullanici?user={user}")
+        return redirect(f"/kullanici?user={user}&bot=False")
 
     day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
     week = reports_week.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
     trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"])
 
-    return render_template("rapor.html", user=user, day=day, week=week, trades=trades)
+    return render_template("rapor.html", user=user, day=day, week=week, trades=trades, bot_control = is_alive)
