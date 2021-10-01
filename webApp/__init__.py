@@ -34,7 +34,7 @@ def index():
 @app.route("/kullanici", methods=["POST", "GET"])
 def kullanici():
     global users, bots
-    curr_user = request.args.get("user")
+    curr_user = request.args.get("user", default=None)
     login = ""
     if not curr_user:
         curr_user = request.form.get("register")
