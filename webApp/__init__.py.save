@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, flash, redirect, session
 import os, signal, time, pickle
 from multiprocessing import Process
@@ -8,24 +9,14 @@ app.secret_key = "super secret key"
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 users = {}
-
-def read_users():
-    global users
-    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
-        users = pickle.load(users_data)
-
-def write_users():
-    global users
-    with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
-        pickle.dump(users, users_data)
-
+bots = {}
 
 def is_alive(user):
     try:
-        users[user]["pid"]
+        bots[user].is_alive()
     except:
         return False
-    return True
+    return bots[user].is_alive()
 
 @app.after_request
 def add_header(response):
@@ -35,14 +26,16 @@ def add_header(response):
 @app.route("/")
 def index():
     global users
-
+    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
+        users = pickle.load(users_data)
     return render_template("index.html")
 
 
 @app.route("/kullanici", methods=["POST", "GET"])
 def kullanici():
     global users, bots
-    read_users()
+    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
+        users = pickle.load(users_data)
 
     curr_user = request.args.get("user", default=None)
     login = ""
@@ -55,7 +48,8 @@ def kullanici():
 
         if curr_user and api and secret:
             users[curr_user] = {"api": api, "secret": secret}
-            write_users()
+            with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
+                pickle.dump(users, users_data)
 
         elif not users.get(login):
             flash("Kullanıcı Bulunamadı")
@@ -63,8 +57,7 @@ def kullanici():
 
     if not curr_user:
         curr_user = login
-
-    print(users[curr_user])
+   
     bot_control = request.args.get("bot", default = is_alive(curr_user), type = lambda x: x == "True")     
     return render_template("kullanici.html", user=curr_user, bot_control=bot_control)
     
@@ -73,21 +66,21 @@ def kullanici():
 @app.route("/bot", methods=["POST", "GET"])
 def bot():
     global users,bots
-    read_users()
+    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
+        users = pickle.load(users_data)
+
     user = request.args.get("user")
 
     if request.form.get("return"):
         return redirect(f"/kullanici?user={user}")
     if request.form.get("stop"):
-        for i in range(100):
+        while bots[user].is_alive():
+            print(bots[user].pid)
             try:
-                os.system(f"kill -9 {users[user]['pid']}")
-            except Exception as e:
-                print(e.message)
+                os.system(f"kill -9 {bots[user].pid}")
+            except:
                 pass
-    
-        users[user].pop("pid", None)
-        write_users()
+            bots.pop(user, None)
         return redirect(f"/kullanici?user={user}&bot=False")
 
     api = users[user]["api"]
@@ -102,14 +95,17 @@ def bot():
     if len(request.form) >= 4:  # formdan gelen veriler symbol, step, yuzde vb leri içerirse 4ten büyük olur
         function = yuzdelik.bot if yuzde else r10_futures.bot
         bot = Process(target=function, args=(symbol, step, unit, grids, api, secret))
+        print(user)
+        bots[user] = bot
         time.sleep(0.3)
         bot.start()
         time.sleep(0.3)
 
-        users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step),
-                       "unit": float(unit), "grids": int(grids), "pid":bot.pid}
-        write_users()
-
+        with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
+            users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step),
+                           "unit": float(unit), "grids": int(grids)}
+            pickle.dump(users, users_data)
+        
     c_bot = users[user]
     return render_template("bot.html",
     trades=last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]),
@@ -120,8 +116,9 @@ def bot():
 @app.route("/raporlar/<user>", methods=["POST", "GET"])
 def raporlar(user):
     global users, bots
-    read_users()
-
+    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
+        users = pickle.load(users_data)
+    
     c_bot = users[user]
     is_alive = request.args.get("bot")
     try:
