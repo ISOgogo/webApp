@@ -4,11 +4,11 @@ from binance_f.base.printobject import *
 from binance_f.model.constant import *
 from decimal import *
 import time, sys
-from datetime import datetime
+import datetime as dt
 
 def trades(symbol, api, secret):
     trades = []
-    client = RequestClient(api_key=api, secret_key=secret, url="https://testnet.binancefuture.com")
+    client = RequestClient(api_key=api, secret_key=secret, url='https://fapi.binance.com')
     curr_trades = client.get_account_trades(symbol=symbol+"USDT", limit=20)
     
     for trade in reversed(curr_trades):
@@ -17,6 +17,6 @@ def trades(symbol, api, secret):
         html_trade["price"]        = "%.2f" % trade.price
         html_trade["qty"]          = str(trade.qty) + " " + symbol
         html_trade["commission"]   = "%.2f" % trade.commission + " " + trade.commissionAsset
-        html_trade["time"]         = str(datetime.fromtimestamp(int(trade.time)/1000))[:-7]
+        html_trade["time"]         = str(dt.datetime.fromtimestamp(int(trade.time)/1000) + dt.timedelta(hours=3) )[:-7]
         trades.append(html_trade)
     return trades

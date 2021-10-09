@@ -6,7 +6,7 @@ from decimal import *
 import time, sys, datetime
 
 def reports(symbol, api, secret):
-    client = RequestClient(api_key=api, secret_key=secret, url="https://testnet.binancefuture.com")
+    client = RequestClient(api_key=api, secret_key=secret, url='https://fapi.binance.com')
     now = client.get_servertime()
     now_dt = datetime.datetime.fromtimestamp(int(now)/1000)
     start_dt = now_dt - datetime.timedelta(days=7)
