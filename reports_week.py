@@ -1,24 +1,20 @@
-from binance_f import RequestClient
-from binance_f.constant.test import *
-from binance_f.base.printobject import *
-from binance_f.model.constant import *
+from binance import Client
 from decimal import *
 import time, sys, datetime
 
 def reports(symbol, api, secret):
-    client = RequestClient(api_key=api, secret_key=secret, url='https://fapi.binance.com')
-    now = client.get_servertime()
+    client = Client(api, secret, testnet=True)
+    now = client.get_server_time()["serverTime"]
     now_dt = datetime.datetime.fromtimestamp(int(now)/1000)
     start_dt = now_dt - datetime.timedelta(days=7)
     start = datetime.datetime.timestamp(start_dt)*1000
-    curr_trades = client.get_account_trades(symbol=symbol+"USDT", startTime=start, endTime=now )
+    
+    curr_trades = client.get_my_trades(symbol=symbol+"USDT", startTime=int(start), endTime=int(now)  )
 
-    realized_pnl = 0
     commission = 0
     sell_count = 0
     for trade in curr_trades:
-        if trade.side == "SELL":
+        if not trade["isBuyer"]:
             sell_count += 1
-        realized_pnl += float(trade.realizedPnl)
-        commission += float(trade.commission)
-    return ("%.2f" % realized_pnl, "%.2f" % commission, sell_count)
+        commission += float(trade["commission"])
+    return ("%.4f" % commission, sell_count)

@@ -41,7 +41,7 @@ def index():
 
 @app.route("/kullanici", methods=["POST", "GET"])
 def kullanici():
-    global users, bots
+    global users
     read_users()
 
     curr_user = request.args.get("user", default=None)
@@ -72,7 +72,7 @@ def kullanici():
 
 @app.route("/bot", methods=["POST", "GET"])
 def bot():
-    global users,bots
+    global users
     read_users()
     user = request.args.get("user")
 
@@ -111,15 +111,18 @@ def bot():
         write_users()
 
     c_bot = users[user]
+    profit_per_sell = c_bot["unit"] * c_bot["step"] 
+    day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
+
     return render_template("bot.html",
-    trades=last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]),
+    trades=(profit_per_sell*day[1],day[0],day[1]),
     report=reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"]),
     user=user)
 
 
 @app.route("/raporlar/<user>", methods=["POST", "GET"])
 def raporlar(user):
-    global users, bots
+    global users
     read_users()
 
     c_bot = users[user]
@@ -130,9 +133,11 @@ def raporlar(user):
         flash("Daha Önce Bot Akif Etmediniz !")
         return redirect(f"/kullanici?user={user}&bot=False")
 
+    profit_per_sell = c_bot["unit"] * c_bot["step"] 
     day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
     week = reports_week.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"])
     trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"])
-
-    return render_template("rapor.html", user=user, day=day, week=week, trades=trades, bot_control = is_alive)
+    
+    return render_template("rapor.html", user= user, day= (profit_per_sell*day[1],day[0],day[1]), 
+                    week=(profit_per_sell*week[1],week[0],week[1]), trades=trades, bot_control = is_alive)
 
