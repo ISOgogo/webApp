@@ -30,8 +30,9 @@ def bot(symbol, step, unit, grids, api, secret):
     ############################################################################# Helper Functions
     def make_order(side, price, unit):
         result = None
-
-        while not result:
+        c=0
+        while not result and c<20:
+            c += 1
             try:
                 result = client.post_order(symbol = symbol, side=side, 
         ordertype=OrderType.LIMIT, quantity=unit, price = price, timeInForce=TimeInForce.GTC)
@@ -139,8 +140,8 @@ def bot(symbol, step, unit, grids, api, secret):
                     
             if curr_trades:
                 last_tradeId = curr_trades[-1].id
-        except BinanceApiException as e:
-            print(e.error_message)
+        except Exception as e:
+            print(e)
             time.sleep(10)
             client = RequestClient(api_key=api, secret_key=secret, url='https://fapi.binance.com')
             continue
