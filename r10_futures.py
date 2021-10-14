@@ -11,7 +11,7 @@ def argument_converter(fn):
 @argument_converter
 def bot(symbol, step, unit, grids, api, secret):
     
-    client = Client(api, secret, testnet=True)
+    client = Client(api, secret)
     symbol = symbol + "USDT"
     last_tradeId = Decimal(0)
     kirik_list = []
@@ -25,7 +25,9 @@ def bot(symbol, step, unit, grids, api, secret):
             try:
                 result = client.create_order(symbol = symbol, side=side, 
         type=Client.ORDER_TYPE_LIMIT, quantity=unit, price = price, timeInForce=Client.TIME_IN_FORCE_GTC)
-            except:
+            except Exception as e:
+                print("MAKE ORDER ERROR")
+                print(e)
                 pass
         print(f"ORDER OPENED {result['side']} -> {result['price']}")
         return result
@@ -88,7 +90,7 @@ def bot(symbol, step, unit, grids, api, secret):
 
     while True:    
         try:
-            time.sleep(1)
+            time.sleep(2)
         
             if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) < unit:
                 delete_buy_orders()
@@ -138,8 +140,8 @@ def bot(symbol, step, unit, grids, api, secret):
                 last_tradeId = curr_trades[-1]["id"]
         except Exception as e:
             print(e)
-            time.sleep(10)
-            client = Client(api, secret, testnet=True)
+            time.sleep(60)
+            client = Client(api, secret)
             continue
     print("Bot Durdu")
 

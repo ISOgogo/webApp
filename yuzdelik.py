@@ -11,7 +11,7 @@ def argument_converter(fn):
 @argument_converter
 def bot(symbol, step, unit, grids, api, secret):
     
-    client = Client(api, secret, testnet=True)
+    client = Client(api, secret)
     symbol = symbol + "USDT"
     last_tradeId = Decimal(0)
     kirik_list = []
@@ -135,7 +135,7 @@ def bot(symbol, step, unit, grids, api, secret):
         except Exception as e:
             print(e)
             time.sleep(10)
-            client = Client(api, secret, testnet=True)
+            client = Client(api, secret)
             continue
     print("Bot Durdu")
 
