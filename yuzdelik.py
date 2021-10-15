@@ -1,7 +1,7 @@
+import logging, threading, os, time , sys, json
 from binance import Client
 from decimal import *
-import time
-import sys
+from unicorn_binance_websocket_api.unicorn_binance_websocket_api_manager import BinanceWebSocketApiManager
 
 def argument_converter(fn):
     def wrapper(symbol, step, unit, grids, api, secret):
@@ -12,45 +12,49 @@ def argument_converter(fn):
 def bot(symbol, step, unit, grids, api, secret):
     
     client = Client(api, secret)
-    symbol = symbol + "USDT"
-    last_tradeId = Decimal(0)
-    kirik_list = []
+    binance_com_websocket_api_manager = BinanceWebSocketApiManager(exchange="binance.com")
+    binance_com_websocket_api_manager.create_stream('arr', '!userData', api_key=api, api_secret=secret)
+    logging.basicConfig(level=logging.INFO,
+                    filename=os.path.basename(__file__) + '.log',
+                    format="{asctime} [{levelname:8}] {process} {thread} {module}: {message}",
+                    style="{")
     
-    ############################################################################# Helper Functions
+    symbol = symbol.upper() + "USDT"
+    
+    ###############################    Helper Functions   ############################################## 
     def make_order(side, price, unit):
         result = None
         c = 0
-        while not result and c<20:
+        while not result and c<10:
             c+=1
             try:
                 result = client.create_order(symbol = symbol, side=side, 
         type=Client.ORDER_TYPE_LIMIT, quantity=unit, price = price, timeInForce=Client.TIME_IN_FORCE_GTC)
-            except:
+            except Exception as e:
+                print(e)
                 pass
+            time.sleep(0.1)
+
         print(f"ORDER OPENED {result['side']} -> {result['price']}")
         return result
 
-
     def bulk_buy():
-        
-        buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
-        buy_price = float(buy["fills"][0]["price"])
-        
-        print(f"BULK BUY")
-        print(buy)
-        for i in range(1,6):
-            sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (buy_price + step*i)), unit)
-        return buy_price
 
-    def initialize():
-        nonlocal last_tradeId, kirik_list
-        kirik_list = []
-        
-        curr_price = bulk_buy()
-        for i in range(1, grids+1):
-            curr_price = curr_price*100/(100+step)
-            buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price), unit)
-        last_tradeId = client.get_my_trades(symbol=symbol, limit=1)[0]["id"]
+        buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
+        curr_price = None
+        while not curr_price:
+            try:
+                curr_price = buy["fills"][0]["price"]
+            except:
+                pass
+
+        print(f"\nBULK BUY")
+        print(buy)
+    
+        for i in range(1,6):
+            curr_price = curr_price*(100+step)/100
+            sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % curr_price), unit)
+        return curr_price
 
     def findmin_openOrders():
         orders = client.get_open_orders(symbol=symbol)
@@ -64,80 +68,72 @@ def bot(symbol, step, unit, grids, api, secret):
                     price = float(order["price"])
                     orderId = order["orderId"]
         return (orderId, count)
-
+    
     def delete_buy_orders():
         orders = client.get_open_orders(symbol=symbol)
         for order in orders:
             if order["side"] == "BUY":
-                try:
-                    client.cancel_order(symbol=symbol, orderId=order["orderId"])
-                except:
-                    pass
+                client.cancel_order(symbol=symbol, orderId=order["orderId"])
+    
+    def initialize():
+        print("BOT HAS BEEN STARTED")
+        curr_price = bulk_buy()
+        for i in range(1, grids+1):
+            curr_price = curr_price*100/(100+step)
+            buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price), unit)
 
             
     #################################################################################################
-
     delete_buy_orders()
     initialize()
 
-    while True:    
-        try:
-            time.sleep(0.2)
+    while True:
+        oldest_stream_data_from_stream_buffer = binance_com_websocket_api_manager.pop_stream_data_from_stream_buffer()
         
-            if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) < unit:
-                delete_buy_orders()
-                print("Initialize")
-                initialize() 
+        if oldest_stream_data_from_stream_buffer:
+            stream = json.loads(oldest_stream_data_from_stream_buffer)
+                        
+
+            if stream["e"] == "executionReport" and stream["o"] == "LIMIT" and stream["s"] == symbol and stream["X"] == "FILLED":
+                price = float(stream["p"])
+                try:
+                    if stream["S"] == "SELL":
+                        print(f"\nSELL -> {price}")
+                        buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price*100/(100+step))), unit )               
+
+                        if findmin_openOrders()[1] > grids:  #eğer gridden fazla buy order var ise en küçüğü iptal et
+                            deleted = None
+                            for i in range(10):
+                                try:
+                                    deleted = client.cancel_order(symbol=symbol, orderId=findmin_openOrders()[0] )
+                                except:
+                                    pass
+                                if deleted:
+                                    break
+                        if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) <= unit:
+                            bulk_buy()
+                                                
+                    if stream["S"] == "BUY":
+                        print(f"\nBUY -> {price}")
+
+                        sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price*(100+step)/100) ), unit )
             
-            curr_trades = client.get_my_trades(symbol=symbol, fromId=last_tradeId)[1:]
-            # Ani fiyat değişimlerinde çok order aynı anda fill oluyor bazen for döngüsü ile incelenebilir
-
-            for curr_trade in curr_trades:
-                
-                order = client.get_order(symbol=symbol, orderId=curr_trade["orderId"])
-
-                if order["orderId"] in kirik_list:
+                        curr_price = price
+                        for i in range(grids):
+                            curr_price = curr_price/(100+step)*100
+                        buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price ) , unit )
+            
+                except Exception as e:
+                    print(e)
+                    time.sleep(60)
+                    client = Client(api, secret)
                     continue
-                elif float(curr_trade["qty"]) < unit:
-                    kirik_list.append(order["orderId"])
-                    
-                    
-                price = float(order["price"])
-                if price == 0:
-                    continue
-
-                if order["side"] == "SELL":  #Eğer son trade satış ise bir aşağı kademeye alış ver
-                    print(f"SELL -> {order['price']}")
-                    buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price*100/(100+step))), unit )               
-
-                    if findmin_openOrders()[1] > grids:  #eğer gridden fazla buy order var ise en küçüğü iptal et
-                        deleted = None
-                        for i in range(10):
-                            try:
-                                deleted = client.cancel_order(symbol=symbol, orderId=findmin_openOrders()[0] )
-                            except:
-                                pass
-                            if deleted:
-                                break
-                
-                                            
-                if order["side"] == "BUY": #Eğer son trade alış ise en aşağı kademeye alış ver ve bir üste satış koy
-                    sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price*(100+step)/100) ), unit )
-                    print(f"BUY -> {order['price']} ")
-                   
-                    curr_price = price
-                    for i in range(grids):
-                        curr_price = curr_price/(100+step)*100
-                    buy = make_order(Client.SIDE_BUY, Decimal("%.2f" %   curr_price ) , unit )
-                    
-            if curr_trades:
-                last_tradeId = curr_trades[-1]["id"]
-        except Exception as e:
-            print(e)
-            time.sleep(10)
-            client = Client(api, secret)
-            continue
-    print("Bot Durdu")
+            
+            elif stream["e"] == "error":
+                print(stream)
+            
+        else:
+            time.sleep(0.5)
 
 if __name__ == "__main__":
     a =     sys.argv[1]
@@ -148,3 +144,4 @@ if __name__ == "__main__":
     secret= sys.argv[6]
 
     bot(a, b, c, d, api, secret)
+
