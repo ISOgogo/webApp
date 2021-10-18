@@ -21,7 +21,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
                     style="{")
     
     symbol = symbol.upper() + "USDT"
-    
+    sell_order_count = 0    
     ###############################    Helper Functions   ############################################## 
     def make_order(side, price, unit):
         result = None
@@ -40,6 +40,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
         return result
 
     def bulk_buy():
+        nonlocal sell_order_count
         buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
         curr_price=None
         while not curr_price:
@@ -54,6 +55,8 @@ def bot(symbol, step, unit, grids, api, secret, user):
         for i in range(1,6):
             curr_price = curr_price*(100+step)/100
             sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % curr_price), unit)
+
+        sell_order_count = 5
         return curr_price
 
     def findmin_openOrders():
@@ -107,7 +110,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
                     if stream["S"] == "SELL" and stream["i"] not in ex_sell_orders:
                         print(f"\nSELL -> {price}")
                         buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price*100/(100+step))), unit )               
-
+                        sell_order_count -= 1
                         if findmin_openOrders()[1] > grids:  #eğer gridden fazla buy order var ise en küçüğü iptal et
                             deleted = None
                             for i in range(10):
@@ -117,14 +120,16 @@ def bot(symbol, step, unit, grids, api, secret, user):
                                     pass
                                 if deleted:
                                     break
-                        if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) < unit:
-                            bulk_buy(price)
+                        
+                        if sell_order_count < 0:            
+                            bulk_buy()
                         increment(user)                 
                     if stream["S"] == "BUY":
                         print(f"\nBUY -> {price}")
 
                         sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price*(100+step)/100) ), unit )
-            
+                        sell_order_count += 1
+          
                         curr_price = price
                         for i in range(grids):
                             curr_price = curr_price/(100+step)*100

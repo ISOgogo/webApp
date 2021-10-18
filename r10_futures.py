@@ -21,6 +21,8 @@ def bot(symbol, step, unit, grids, api, secret, user):
                     style="{")
     
     symbol = symbol.upper() + "USDT"
+    sell_order_count = 0
+
     ###############################    Helper Functions   ############################################## 
     def make_order(side, price, unit):
         result = None
@@ -39,6 +41,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
         return result
 
     def bulk_buy():
+        nonlocal sell_order_count
         buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
         price = None
         while not price:
@@ -51,6 +54,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
         print(buy)
         for i in range(1,6):
             sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price + step*i)), unit)
+        sell_order_count = 5
         return price
 
     def findmin_openOrders():
@@ -87,9 +91,8 @@ def bot(symbol, step, unit, grids, api, secret, user):
     for order in orders:
         if order["side"] == "SELL":
             ex_sell_orders.append(order["orderId"])
-
     #################################################################################################  
-    
+
     initialize()
     while True:
         oldest_stream_data_from_stream_buffer = binance_com_websocket_api_manager.pop_stream_data_from_stream_buffer()
@@ -102,6 +105,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
                 try:
                     if stream["S"] == "SELL" and stream["i"] not in ex_sell_orders:
                         print(f"\nSELL -> {price}")
+                        sell_order_count -= 1
                         buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price - step)), unit)
 
                         if findmin_openOrders()[1] > grids:  #eğer gridden fazla buy order var ise en küçüğü iptal et
@@ -112,15 +116,16 @@ def bot(symbol, step, unit, grids, api, secret, user):
                                     except:
                                         pass
                                     if deleted:
-                                        break            
-                        if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) < unit:
+                                        break 
+
+                        if sell_order_count == 0:
                             initialize()
                         increment(user)   ## increment sell_count to calculate reports
 
                     if stream["S"] == "BUY":
                         print(f"\nBUY -> {price} ")
                         sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price + step)), unit )
-                            
+                        sell_order_count += 1
                         buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price - step*grids)) , unit )
 
                 except Exception as e:
