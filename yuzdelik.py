@@ -38,10 +38,9 @@ def bot(symbol, step, unit, grids, api, secret):
         print(f"ORDER OPENED {result['side']} -> {result['price']}")
         return result
 
-    def bulk_buy():
+    def bulk_buy(curr_price=None):
 
         buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
-        curr_price = None
         while not curr_price:
             try:
                 curr_price = buy["fills"][0]["price"]
@@ -82,7 +81,11 @@ def bot(symbol, step, unit, grids, api, secret):
             curr_price = curr_price*100/(100+step)
             buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price), unit)
 
-            
+    ex_sell_orders = []
+    orders = client.get_open_orders(symbol=symbol)
+    for order in orders:
+        if order["side"] == "SELL":
+            ex_sell_orders.append(order["orderId"])          
     #################################################################################################
     delete_buy_orders()
     initialize()
@@ -97,7 +100,7 @@ def bot(symbol, step, unit, grids, api, secret):
             if stream["e"] == "executionReport" and stream["o"] == "LIMIT" and stream["s"] == symbol and stream["X"] == "FILLED":
                 price = float(stream["p"])
                 try:
-                    if stream["S"] == "SELL":
+                    if stream["S"] == "SELL" and stream["i"] not in ex_sell_orders:
                         print(f"\nSELL -> {price}")
                         buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price*100/(100+step))), unit )               
 
@@ -111,7 +114,7 @@ def bot(symbol, step, unit, grids, api, secret):
                                 if deleted:
                                     break
                         if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) <= unit:
-                            bulk_buy()
+                            bulk_buy(price)
                                                 
                     if stream["S"] == "BUY":
                         print(f"\nBUY -> {price}")
