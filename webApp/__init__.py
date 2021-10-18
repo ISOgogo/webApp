@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, flash, redirect, session
 import os, signal, time, pickle
 from datetime import datetime
 from multiprocessing import Process
-import yuzdelik, r10_futures, last_trades, reports_week, reports_day
+import yuzdelik, r10_futures, last_trades, reports_day, cancel_buy_orders
+
 
 app = Flask(__name__)
 app.secret_key = "super secret key"
@@ -81,12 +82,14 @@ def bot():
         return redirect(f"/kullanici?user={user}")
     if request.form.get("stop"):
         for i in range(100):
+            time.sleep(0.01)
             try:
                 os.system(f"kill -9 {users[user]['pid']}")
             except Exception as e:
                 print(e.message)
                 pass
-    
+        
+        cancel_buy_orders.cancel(users[user]['api'], users[user]['secret'], users[user]['symbol'])
         users[user].pop("pid", None)
         write_users()
         return redirect(f"/kullanici?user={user}&bot=False")
@@ -102,21 +105,21 @@ def bot():
 
     if len(request.form) >= 4:  # formdan gelen veriler symbol, step, yuzde vb leri içerirse 4ten büyük olur
         function = yuzdelik.bot if yuzde else r10_futures.bot
-        bot = Process(target=function, args=(symbol, step, unit, grids, api, secret))
+        bot = Process(target=function, args=(symbol, step, unit, grids, api, secret, user))
         time.sleep(0.3)
         bot.start()
         now = datetime.now()
         time.sleep(0.3)
 
         users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step),
-                       "unit": float(unit), "grids": int(grids), "pid":bot.pid, "time":now}
+                       "unit": float(unit), "grids": int(grids), "pid":bot.pid, "sell_count": 0,"time":now}
         write_users()
 
     c_bot = users[user]
 
     return render_template("bot.html",
     trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]),
-    report = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["step"], c_bot["time"]),
+    report = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["unit"], c_bot["step"], c_bot["time"]),
     user=user)
 
 
@@ -124,8 +127,8 @@ def bot():
 def raporlar(user):
     global users
     read_users()
-
     c_bot = users[user]
+
     is_alive = request.args.get("bot")
     try:
         sym = c_bot["symbol"]
@@ -134,8 +137,9 @@ def raporlar(user):
         return redirect(f"/kullanici?user={user}&bot=False")
 
     profit_per_sell = c_bot["unit"] * c_bot["step"] 
-    day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"],c_bot["step"], c_bot["time"])
-    week = day
+
+    day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["unit"], c_bot["step"], c_bot["time"])
+    week = ( "%.2f" % (profit_per_sell*c_bot["sell_count"]), c_bot["sell_count"])
     trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"])
     
     return render_template("rapor.html", user= user, day=day,

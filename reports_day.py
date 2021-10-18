@@ -2,7 +2,7 @@ from binance import Client
 from decimal import *
 import time, sys, datetime
 
-def reports(symbol, api, secret, step, bot_start_time):
+def reports(symbol, api, secret, unit, step, bot_start_time):
     client = Client(api, secret)
     now = client.get_server_time()["serverTime"]
     now_dt = datetime.datetime.fromtimestamp(int(now)/1000)
@@ -17,8 +17,8 @@ def reports(symbol, api, secret, step, bot_start_time):
     for trade in curr_trades:
         if not trade["isBuyer"]:
             profit += step*float(trade["qty"])
-            sell_count += 1
+            sell_count += float(trade["qty"]) / unit
         commission += float(trade["commission"])
-    return ("%.3f" % profit, "%.4f" % commission, sell_count)
+    return ("%.2f" % profit, "%.4f" % commission, "%.1f" % sell_count)
 
 

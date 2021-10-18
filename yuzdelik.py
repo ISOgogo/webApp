@@ -2,14 +2,15 @@ import logging, threading, os, time , sys, json
 from binance import Client
 from decimal import *
 from unicorn_binance_websocket_api.unicorn_binance_websocket_api_manager import BinanceWebSocketApiManager
+from increment import increment
 
 def argument_converter(fn):
-    def wrapper(symbol, step, unit, grids, api, secret):
-        return fn(symbol, float(step), float(unit), int(grids), api ,secret)
+    def wrapper(symbol, step, unit, grids, api, secret, user):
+        return fn(symbol, float(step), float(unit), int(grids), api ,secret, user)
     return wrapper
 
 @argument_converter
-def bot(symbol, step, unit, grids, api, secret):
+def bot(symbol, step, unit, grids, api, secret, user):
     
     client = Client(api, secret)
     binance_com_websocket_api_manager = BinanceWebSocketApiManager(exchange="binance.com")
@@ -38,12 +39,12 @@ def bot(symbol, step, unit, grids, api, secret):
         print(f"ORDER OPENED {result['side']} -> {result['price']}")
         return result
 
-    def bulk_buy(curr_price=None):
-
+    def bulk_buy():
         buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
+        curr_price=None
         while not curr_price:
             try:
-                curr_price = buy["fills"][0]["price"]
+                curr_price = float(buy["fills"][0]["price"])
             except:
                 pass
 
@@ -72,11 +73,15 @@ def bot(symbol, step, unit, grids, api, secret):
         orders = client.get_open_orders(symbol=symbol)
         for order in orders:
             if order["side"] == "BUY":
-                client.cancel_order(symbol=symbol, orderId=order["orderId"])
-    
+                try:
+                    client.cancel_order(symbol=symbol, orderId=order["orderId"])
+                except:
+                    pass
+
     def initialize():
         print("BOT HAS BEEN STARTED")
         curr_price = bulk_buy()
+        delete_buy_orders()
         for i in range(1, grids+1):
             curr_price = curr_price*100/(100+step)
             buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price), unit)
@@ -87,7 +92,7 @@ def bot(symbol, step, unit, grids, api, secret):
         if order["side"] == "SELL":
             ex_sell_orders.append(order["orderId"])          
     #################################################################################################
-    delete_buy_orders()
+    
     initialize()
 
     while True:
@@ -96,7 +101,6 @@ def bot(symbol, step, unit, grids, api, secret):
         if oldest_stream_data_from_stream_buffer:
             stream = json.loads(oldest_stream_data_from_stream_buffer)
                         
-
             if stream["e"] == "executionReport" and stream["o"] == "LIMIT" and stream["s"] == symbol and stream["X"] == "FILLED":
                 price = float(stream["p"])
                 try:
@@ -113,9 +117,9 @@ def bot(symbol, step, unit, grids, api, secret):
                                     pass
                                 if deleted:
                                     break
-                        if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) <= unit:
+                        if float(client.get_asset_balance(asset=symbol[:-4])["locked"]) < unit:
                             bulk_buy(price)
-                                                
+                        increment(user)                 
                     if stream["S"] == "BUY":
                         print(f"\nBUY -> {price}")
 
@@ -145,6 +149,6 @@ if __name__ == "__main__":
     d =     int(sys.argv[4])
     api =   sys.argv[5]
     secret= sys.argv[6]
-
-    bot(a, b, c, d, api, secret)
+    user =  sys.argv[7]
+    bot(a, b, c, d, api, secret, user)
 
