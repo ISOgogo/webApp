@@ -22,9 +22,14 @@ def bot(symbol, step, unit, grids, api, secret, user):
     
     symbol = symbol.upper() + "USDT"
     sell_order_count = 0
+    open_orders = []
 
     ###############################    Helper Functions   ############################################## 
     def make_order(side, price, unit):
+        nonlocal open_orders
+        if price in open_orders:
+            return None
+
         result = None
         c = 0
         while not result and c<10:
@@ -34,10 +39,10 @@ def bot(symbol, step, unit, grids, api, secret, user):
         type=Client.ORDER_TYPE_LIMIT, quantity=unit, price = price, timeInForce=Client.TIME_IN_FORCE_GTC)
             except Exception as e:
                 print(e)
-                time.sleep(0.1)
                 pass
-
+            time.sleep(0.2)
         print(f"ORDER OPENED {result['side']} -> {result['price']}")
+        open_orders.append(price)
         return result
 
     def bulk_buy():

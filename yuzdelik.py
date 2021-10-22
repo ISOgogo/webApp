@@ -34,7 +34,7 @@ def bot(symbol, step, unit, grids, api, secret, user):
             except Exception as e:
                 print(e)
                 pass
-            time.sleep(0.1)
+            time.sleep(0.2)
 
         print(f"ORDER OPENED {result['side']} -> {result['price']}")
         return result
