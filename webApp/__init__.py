@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, flash, redirect, session
 import os, signal, time, pickle
 from datetime import datetime
 from multiprocessing import Process
-import yuzdelik, r10_futures, last_trades, reports_day, cancel_buy_orders
+import yuzdelik, r10_futures, last_trades, reports_day, cancel_buy_orders, open_orders
 
 
 app = Flask(__name__)
@@ -13,12 +13,12 @@ users = {}
 
 def read_users():
     global users
-    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
+    with open('users_data.pckl', 'rb') as users_data:  
         users = pickle.load(users_data)
 
 def write_users():
     global users
-    with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
+    with open('users_data.pckl', 'wb') as users_data:
         pickle.dump(users, users_data)
 
 
@@ -68,7 +68,26 @@ def kullanici():
 
     print(users[curr_user])
     bot_control = request.args.get("bot", default = is_alive(curr_user), type = lambda x: x == "True")     
-    return render_template("kullanici.html", user=curr_user, bot_control=bot_control)
+    
+    c_bot = users[curr_user]
+    
+    day = None
+    trades = None
+    if bot_control: 
+        day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["unit"], c_bot["step"], c_bot["time"])
+        trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"])
+    
+    try:
+        sym = c_bot["ex_sell_orders"]
+        buy_stats = open_orders.open_orders(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["step"], c_bot["ex_sell_orders"])
+        profit_per_sell = c_bot["unit"] * c_bot["step"] 
+        all_time = ( c_bot["sell_count"], "%.2f" % (profit_per_sell*c_bot["sell_count"]) )
+    except:
+        buy_stats = (0,0)
+        all_time = (0,0)
+        
+    return render_template("kullanici.html", user=curr_user, bot_control=bot_control, 
+    day=day, all_time=all_time, trades=trades, buy_stats = buy_stats)
     
 
 
@@ -77,16 +96,14 @@ def bot():
     global users
     read_users()
     user = request.args.get("user")
-
-    if request.form.get("return"):
-        return redirect(f"/kullanici?user={user}")
+    
     if request.form.get("stop"):
         for i in range(100):
             time.sleep(0.01)
             try:
                 os.system(f"kill -9 {users[user]['pid']}")
             except Exception as e:
-                print(e.message)
+                print(e)
                 pass
         
         cancel_buy_orders.cancel(users[user]['api'], users[user]['secret'], users[user]['symbol'])
@@ -117,10 +134,7 @@ def bot():
 
     c_bot = users[user]
 
-    return render_template("bot.html",
-    trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"]),
-    report = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], c_bot["unit"], c_bot["step"], c_bot["time"]),
-    user=user)
+    return redirect(f"/kullanici?user={user}&bot=True")
 
 
 @app.route("/raporlar/<user>", methods=["POST", "GET"])

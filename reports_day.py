@@ -19,6 +19,6 @@ def reports(symbol, api, secret, unit, step, bot_start_time):
             profit += step*float(trade["qty"])
             sell_count += float(trade["qty"]) / unit
         commission += float(trade["commission"])
-    return ("%.2f" % profit, "%.4f" % commission, "%.1f" % sell_count)
+    return ("%.1f" % sell_count, "%.2f" % profit, "%.4f" % commission, )
 
 

@@ -1,45 +1,383 @@
 <!DOCTYPE html>
-<html>
+<!--
+This is a starter template page. Use this page to start your new project from
+scratch. This page gets rid of all links and provides the needed markup only.
+-->
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>kullanici Sayfasi</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdminLTE 3 | Starter</title>
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="{{url_for('static', filename='plugins/fontawesome-free/css/all.min.css')}}">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="{{url_for('static', filename='dist/css/adminlte.min.css')}}">
 </head>
-<body>
-    {% for message in get_flashed_messages() %}
-    <h1>
-        <div class="alert-error">Hata: {{ message }}</div><br>
-    </h1>
-    {% endfor %}
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+      </li>
+     
+    </ul>
 
-    <a href= {{url_for('index')}} >Ana Sayfa </a> <br><br>
-    <strong>KULLANICI:</strong> {{ user }} <br>
-    <h1>Bot Ayarları:</h1>
-    <div style="display:flex">
-        <form action="/bot?user={{user}}" method="post">
-            <input type="text" name="coin" placeholder="COIN"> <br>
-            <div style="display:flex">
-            <input type="text" name="step" placeholder="Fiyat Aralığı"> <br>
-            <input type="checkbox" name="yuzde" value="yuzde"> Yüzdelik
-            </div>
-            <input type="text" name="unit" placeholder="İşlem Büyüklüğü"> <br>
-            <input type="text" name="grids" placeholder="Kademe Sayısı"> <br> <br>
-            
-            <input type="submit" value="BAŞLAT">
-        </form>
-        {% if bot_control %}
-            <form style="margin-left: 30px;" action="/bot?user={{user}}&bot={{bot_control}}" method="post">
-            <label for = "show">Botunuz Aktif!</label><br>
-            <input id = "show" type="submit" value="Botu Görüntüle">
-            </form>
-        {% else %}
-            <text style="margin-left: 30px;">Aktif Bir Botunuz Bulunmamakta !</text>
-        {% endif %}  
-            <form style="margin-left: 50px;" action="/raporlar/{{user}}?bot={{bot_control}}" method="post">
-                <input type="submit" value="Raporlarımı Görüntüle">
-            </form>
+  </nav>
 
+  <!-- Main Sidebar Container -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="index3.html" class="brand-link">
+      <img src="{{url_for('static', filename='dist/img/AdminLTELogo.png')}}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+      <span class="brand-text font-weight-light">GÖKYAN BOT V.1</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar user panel (optional) -->
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+          <img src="{{url_for('static', filename='dist/img/user2-160x160.jpg')}}" class="img-circle elevation-2" alt="User Image">
+        </div>
+        <div class="info">
+          <a href="#" class="d-block">Merhaba Ulan Gökyan Abi</a>
+        </div>
+      </div>
+
+    
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+          <li class="nav-item">
+            <a href="/" class="nav-link">
+              <i class="nav-icon fas fa-th"></i>
+              <p>
+                Ana Sayfa
+              </p>
+            </a>
+          </li>
+           <li class="nav-item">
+            <a class="nav-link">
+              <i class="nav-icon far fa-circle nav-icon"></i>
+              <p>
+                Raporlar
+              </p>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <!-- /.sidebar-menu -->
     </div>
+    <!-- /.sidebar -->
+  </aside>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0">Hoşgeldin {{ user }}</h1>
+          </div><!-- /.col -->
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item active">Starter Page</li>
+            </ol>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+      <div class="container-fluid">
+    <h5 class="mb-2">Genel Rapor<small><i>Bu zamana kadar yapılan işlemler</i></small></h5>
+    <div class="row">
+         
+          <!-- /.col -->
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box bg-success">
+              <span class="info-box-icon"><i class="far fa-thumbs-up"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">Bot Satış Sayısı</span>
+                <span class="info-box-number">{{all_time[0]}}</span>
+
+               
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <!-- /.col -->
+         
+          <!-- /.col -->
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box bg-danger">
+              <span class="info-box-icon"><i class="fas fa-comments"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">Tahmini Kazanç</span>
+                <span class="info-box-number">{{all_time[1]}} USDT</span>
+
+               
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <!-- /.col -->
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box bg-warning">
+              <span class="info-box-icon"><i class="far fa-calendar-alt"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">Eldeki COIN Miktarı</span>
+                <span class="info-box-number">{{buy_stats[0]}}</span>
+
+               
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box bg-info">
+              <span class="info-box-icon"><i class="far fa-bookmark"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">Ortalama Alım Maliyeti</span>
+                <span class="info-box-number">{{buy_stats[1]}} USDT</span>
+
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-body">
+                 <p class="card-text">
+                  {% for message in get_flashed_messages() %}
+    <div class="alert alert-danger alert-dismissible">
+                  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                  <h5><i class="icon fas fa-ban"></i> Sorun Var!</h5>
+                  Hata: {{ message }}
+                </div>
+                {% endfor %}
+                 {% if bot_control %}
+                 <div class="alert alert-success alert-dismissible">
+                  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                  <h5><i class="icon fas fa-check"></i> Bot Aktif!</h5>
+                  Botun şu anda aktif ve çalışıyor
+                </div>
+
+                
+                {% else %}
+                <div class="alert alert-danger alert-dismissible">
+                  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                  <h5><i class="icon fas fa-exclamation-triangle"></i> Bot Pasif!</h5>
+                  Bot şu anda pasif ve çalışmıyor
+                </div>
+                {% endif %} 
+ </p>
+           
+              </div>
+            </div>
+
+          </div>
+          <!-- /.col-md-12 -->
+        </div>
+          {% if bot_control %}
+        <div class="row">
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box">
+              <span class="info-box-icon bg-info"><i class="far fa-envelope"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">24 Saatlik Satış Sayısı</span>
+                <span class="info-box-number">{{day[0]}}</span>
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <!-- /.col -->
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box">
+              <span class="info-box-icon bg-success"><i class="far fa-flag"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">24 Saatlik Kazanç</span>
+                <span class="info-box-number">{{day[1]}} USDT </span>
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <!-- /.col -->
+          <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box">
+              <span class="info-box-icon bg-warning"><i class="far fa-copy"></i></span>
+
+              <div class="info-box-content">
+                <span class="info-box-text">Komisyon</span>
+                <span class="info-box-number">{{day[2]}} BNB</span>
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <!-- /.col -->
+           <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box">
+              
+
+              <div class="info-box-content">
+                
+                <span class="info-box-number">
+    <form action="/bot?user={{user}}" method="POST">
+        <input type="submit" name="stop" value="BOTU DURDUR" class="btn btn-block btn-danger btn-lg"></input>
+    </form>
+
+
+              </span>
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+         
+          <!-- /.col -->
+         
+        </div>
+         
+         <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Son 20 İşlem</h3>
+
+              </div>
+              <!-- /.card-header -->
+              <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap">
+                  <thead>
+                    <tr>
+                      <th>Tarih</th>
+                      <th>İşlem</th>
+                      <th>Fiyatı</th>
+                      <th>Miktar</th>
+                      <th>Komisyon</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for trade in trades%}
+                    <tr>
+                      <td>{{trade["time"]}}</td>
+                      <td><span class="tag tag-success">{{trade["side"]}}</span></td>
+                      <td>{{trade["price"]}}</td>
+                      <td>{{trade["qty"]}}</td>
+                      <td>{{trade["commission"]}}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                  </tbody>
+                </table>
+              </div>
+              <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+          </div>
+        </div>
+        {% endif %} 
+                <div class="row">
+          <div class="col-lg-12">
+          <div class="card card-primary">
+              <div class="card-header">
+                <h3 class="card-title">YENİ BOT OLUŞTUR</h3>
+              </div>
+              <!-- /.card-header -->
+              <!-- form start -->
+              <form action="/bot?user={{user}}" method="post">
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Coin Adını Girin</label>
+                    <input type="text" name="coin" class="form-control" id="exampleInputEmail1" placeholder="Coin Adı ">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputPassword1">İşlem Fiyat Aralığı</label>
+                    <input type="text" name="step" class="form-control" id="exampleInputPassword1" placeholder="Fiyat Aralığı">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">İşlem Büyüklüğü</label>
+                    <input type="text" name="unit" class="form-control" id="exampleInputEmail1" placeholder="Coin Cinsinden Min 10 USDT">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Kademe Sayısı</label>
+                    <input type="text" name="grids" class="form-control" id="exampleInputEmail1" placeholder="Kademe Sayısı">
+                  </div>
+                  
+                </div>
+                <!-- /.card-body -->
+
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-primary">Botu Başlat</button>
+                </div>
+              </form>
+            </div>
+
+          </div>
+          <!-- /.col-md-12 -->
+        </div>
+        <!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+
+  <!-- Control Sidebar -->
+  <aside class="control-sidebar control-sidebar-dark">
+    <!-- Control sidebar content goes here -->
+    <div class="p-3">
+      <h5>Title</h5>
+      <p>Sidebar content</p>
+    </div>
+  </aside>
+  <!-- /.control-sidebar -->
+
+  <!-- Main Footer -->
+  <footer class="main-footer">
+    <!-- To the right -->
+    <div class="float-right d-none d-sm-inline">
+     Sen nasıl istersen
+    </div>
+    <!-- Default to the left -->
+    <strong>Her hakkı saklıdır
+  </footer>
+</div>
+<!-- ./wrapper -->
+
+<!-- REQUIRED SCRIPTS -->
+
+<!-- jQuery -->
+<script src="{{url_for('static', filename='plugins/jquery/jquery.min.js')}}"></script>
+<!-- Bootstrap 4 -->
+<script src="{{url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
+<!-- AdminLTE App -->
+<script src="{{url_for('static', filename='dist/js/adminlte.min.js')}}"></script>
 </body>
 </html>
