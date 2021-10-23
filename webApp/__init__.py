@@ -13,12 +13,12 @@ users = {}
 
 def read_users():
     global users
-    with open('users_data.pckl', 'rb') as users_data:  
+    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
         users = pickle.load(users_data)
 
 def write_users():
     global users
-    with open('users_data.pckl', 'wb') as users_data:
+    with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
         pickle.dump(users, users_data)
 
 

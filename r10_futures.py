@@ -102,10 +102,10 @@ def bot(symbol, step, unit, grids, api, secret, user):
             ex_sell_orders.append(order["orderId"])
     
     users = {}
-    with open('users_data.pckl', 'rb') as users_data:  
+    with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
         users = pickle.load(users_data) 
     users[user]["ex_sell_orders"] = ex_sell_orders
-    with open('users_data.pckl', 'wb') as users_data:
+    with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
         pickle.dump(users, users_data)
 
     #################################################################################################  
