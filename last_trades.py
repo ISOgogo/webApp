@@ -3,9 +3,9 @@ from decimal import *
 import time, sys
 import datetime as dt
 
-def trades(symbol, api, secret):
+def trades(symbol, api, secret, bool_test):
     trades = []
-    client = Client(api, secret)
+    client = Client(api, secret, testnet = bool_test)
     curr_trades = client.get_my_trades(symbol=symbol+"USDT", limit=20)
     
     for trade in reversed(curr_trades):

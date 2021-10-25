@@ -2,8 +2,8 @@ from binance import Client
 from decimal import *
 import time, sys, datetime
 
-def reports(symbol, api, secret, unit, step, bot_start_time):
-    client = Client(api, secret)
+def reports(symbol, api, secret, bool_test, unit, step, bot_start_time):
+    client = Client(api, secret, testnet = bool_test)
     now = client.get_server_time()["serverTime"]
     now_dt = datetime.datetime.fromtimestamp(int(now)/1000)
     start_dt = now_dt - datetime.timedelta(days=1)
