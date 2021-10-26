@@ -12,13 +12,13 @@ def reports(symbol, api, secret, bool_test, unit, step, bot_start_time):
     
     curr_trades = client.get_my_trades(symbol=symbol+"USDT", startTime=int(start), endTime=int(now) )
     profit = 0
-    commission = 0
     sell_count = 0
+    
     for trade in curr_trades:
         if not trade["isBuyer"]:
             profit += step*float(trade["qty"])
             sell_count += float(trade["qty"]) / unit
-        commission += float(trade["commission"])
-    return ("%.1f" % sell_count, "%.2f" % profit, "%.4f" % commission, )
+
+    return ("%.1f" % sell_count, "%.2f" % profit )
 
 

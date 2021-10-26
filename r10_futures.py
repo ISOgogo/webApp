@@ -8,11 +8,19 @@ def argument_converter(fn):
         return fn(symbol, float(step), float(unit), int(grids), api ,secret, bool_test, user)
     return wrapper
 
-def increment(user):
+def increment():
     users = {}
     with open('users_data.pckl', 'rb') as users_data:  
         users = pickle.load(users_data) 
     users[user]["sell_count"] += 1
+    with open('users_data.pckl', 'wb') as users_data:
+        pickle.dump(users, users_data)
+
+def commission(commission):
+    users = {}
+    with open('users_data.pckl', 'rb') as users_data:  
+        users = pickle.load(users_data) 
+    users[user]["commission"] += commission
     with open('users_data.pckl', 'wb') as users_data:
         pickle.dump(users, users_data)
 
@@ -162,7 +170,8 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user ):
                                     
                         if sell_order_count == 0:
                             initialize()
-                        increment(user)   ## increment sell_count to calculate reports
+                        increment()   ## increment sell_count to calculate reports
+                        commission(float(stream["n"]))   
 
                     if stream["S"] == "BUY":
                         print(f"\nBUY -> {price} ")
@@ -173,6 +182,7 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user ):
                         sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price + step)), unit )
                         sell_order_count += 1
                         buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price - step*grids)) , unit )
+                        commission(float(stream["n"]))   
 
                 except Exception as e:
                     print(e)

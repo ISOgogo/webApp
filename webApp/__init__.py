@@ -74,6 +74,8 @@ def kullanici():
     
     day = None
     trades = None
+    commission = 0 if not c_bot.get("commission") else "%.2f" % c_bot.get("commission")
+
     if bot_control: 
         day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], False, c_bot["unit"], c_bot["step"], c_bot["time"])
         trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"], False)
@@ -88,7 +90,7 @@ def kullanici():
         all_time = (0,0)
         
     return render_template("kullanici.html", user=curr_user, bot_control=bot_control, 
-    day=day, all_time=all_time, trades=trades, buy_stats = buy_stats)
+    day=day, all_time=all_time, trades=trades, buy_stats = buy_stats, commission = commission)
     
 @app.route("/bot", methods=["POST", "GET"])
 def bot():
@@ -127,8 +129,8 @@ def bot():
         now = datetime.now()
         time.sleep(0.3)
 
-        users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step),
-                       "unit": float(unit), "grids": int(grids), "pid":bot.pid, "sell_count": 0,"time":now}
+        users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step), "unit": float(unit),
+                    "grids": int(grids), "pid":bot.pid, "sell_count": 0, "time":now, "commission": 0.0}
         write_users()
 
     c_bot = users[user]
