@@ -8,22 +8,6 @@ def argument_converter(fn):
         return fn(symbol, float(step), float(unit), int(grids), api ,secret, bool_test, user)
     return wrapper
 
-def increment():
-    users = {}
-    with open('users_data.pckl', 'rb') as users_data:  
-        users = pickle.load(users_data) 
-    users[user]["sell_count"] += 1
-    with open('users_data.pckl', 'wb') as users_data:
-        pickle.dump(users, users_data)
-
-def commission(commission):
-    users = {}
-    with open('users_data.pckl', 'rb') as users_data:  
-        users = pickle.load(users_data) 
-    users[user]["commission"] += commission
-    with open('users_data.pckl', 'wb') as users_data:
-        pickle.dump(users, users_data)
-
 @argument_converter
 def bot(symbol, step, unit, grids, api, secret, bool_test, user):
     
@@ -43,7 +27,23 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
     sell_order_count = 0    
     open_buys  = []
     open_sells = []
+
     ###############################    Helper Functions   ############################################## 
+    def increment():
+        users = {}
+        with open('users_data.pckl', 'rb') as users_data:  
+            users = pickle.load(users_data) 
+        users[user]["sell_count"] += 1
+        with open('users_data.pckl', 'wb') as users_data:
+            pickle.dump(users, users_data)
+
+    def commission(commission):
+        users = {}
+        with open('users_data.pckl', 'rb') as users_data:  
+            users = pickle.load(users_data) 
+        users[user]["commission"] += commission
+        with open('users_data.pckl', 'wb') as users_data:
+            pickle.dump(users, users_data)
     def make_order(side, price, unit):
         nonlocal open_buys, open_sells   ## if there is a order with same price do not make order
         if side == Client.SIDE_BUY and price in open_buys:
