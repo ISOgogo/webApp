@@ -40,12 +40,22 @@
                     </div>
                     <div id="collapseOne" class="collapse" data-parent="#accordion" style="">
                       <div class="card-body">    
-     <form action="/test_kullanici" method="POST">
+     <form action="" method="POST">
+      {{ login.hidden_tag() }}
         <div class="input-group mb-3">
-          <input type="text" name="login" class="form-control" placeholder="Kullanıcı Adını Yazın">
+          {{ login.username() }}
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-user"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group mb-3">
+          {{ login.password() }}
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-key"></span>
             </div>
           </div>
         </div>
@@ -74,28 +84,37 @@
                     </div>
                     <div id="collapseTwo" class="collapse" data-parent="#accordion" style="">
                       <div class="card-body">
-                       <form action="/test_kullanici" method="POST">
+            <form action="" method="POST">
+            {{ register.hidden_tag() }}
         <div class="input-group mb-3">
-          <input type="text" name="register" class="form-control" placeholder="Kullanıcı Adı">
+          {{ register.username() }}
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-user"></span>
             </div>
           </div>
         </div>
-         <div class="input-group mb-3">
-          <input type="text" name="api" class="form-control" placeholder="Api Key">
+        <div class="input-group mb-3">
+          {{ register.password() }}
           <div class="input-group-append">
             <div class="input-group-text">
-             
+              <span class="fas fa-key"></span>
             </div>
           </div>
         </div>
          <div class="input-group mb-3">
-          <input type="text" name="secret" class="form-control" placeholder="Secret Key">
+          {{ register.api() }}
           <div class="input-group-append">
             <div class="input-group-text">
-             
+              <span class="fas fa-key"></span>
+            </div>
+          </div>
+        </div>
+         <div class="input-group mb-3">
+          {{ register.secret() }}
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-key"></span>
             </div>
           </div>
         </div>

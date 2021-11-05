@@ -4,12 +4,12 @@ from decimal import *
 from unicorn_binance_websocket_api.unicorn_binance_websocket_api_manager import BinanceWebSocketApiManager
 
 def argument_converter(fn):
-    def wrapper(symbol, step, unit, grids, api, secret, bool_test, user):
+    def wrapper(symbol, step, unit, grids, api, secret, bool_test, user ):
         return fn(symbol, float(step), float(unit), int(grids), api ,secret, bool_test, user)
     return wrapper
 
 @argument_converter
-def bot(symbol, step, unit, grids, api, secret, bool_test, user):
+def bot(symbol, step, unit, grids, api, secret, bool_test, user ):
     
     client = Client(api, secret, testnet=bool_test)
     if bool_test:
@@ -24,10 +24,10 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
                     style="{")
     
     symbol = symbol.upper() + "USDT"
-    sell_order_count = 0    
+    sell_order_count = 0
     open_buys  = []
     open_sells = []
-
+    
     ###############################    Helper Functions   ############################################## 
     def increment():
         users = {}
@@ -44,6 +44,7 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
         users[user]["commission"] += commission
         with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
             pickle.dump(users, users_data)
+
     def make_order(side, price, unit):
         nonlocal open_buys, open_sells   ## if there is a order with same price do not make order
         if side == Client.SIDE_BUY and price in open_buys:
@@ -66,22 +67,30 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
     def bulk_buy():
         nonlocal sell_order_count
         buy = client.create_order(symbol = symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=unit*5)
-        curr_price=None
-        while not curr_price:
+        price = None
+        while not price:
             try:
-                curr_price = float(buy["fills"][0]["price"])
+                price=float(buy["fills"][0]["price"])
             except:
                 pass
 
         print(f"\nBULK BUY")
         print(buy)
-    
+        
+        bulk_buy_orders = {}
         for i in range(1,6):
-            curr_price = curr_price*(100+step)/100
-            sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % curr_price), unit)
-
+            sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price + step*i)), unit)
+            bulk_buy_orders[sell["orderId"]] = price
         sell_order_count = 5
-        return curr_price
+
+        users = {}  ## Eldeki COIN miktarını doğru hesaplamak için bulk buyları kayıt et
+        with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
+            users = pickle.load(users_data) 
+        users[user]["bulk_buy_orders"] = bulk_buy_orders
+        with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
+            pickle.dump(users, users_data)
+       
+        return price
 
     def findmin_openOrders():
         orders = client.get_open_orders(symbol=symbol)
@@ -95,53 +104,53 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
                     price = float(order["price"])
                     orderId = order["orderId"]
         return (orderId, count)
-    
+
     def delete_buy_orders():
         orders = client.get_open_orders(symbol=symbol)
         for order in orders:
             if order["side"] == "BUY":
                 try:
                     client.cancel_order(symbol=symbol, orderId=order["orderId"])
-                except:
+                except: 
                     pass
+        
 
     def initialize():
         nonlocal open_buys, open_sells
         open_buys = []
         open_sells = []
         print("BOT HAS BEEN STARTED")
-        curr_price = bulk_buy()
+        price = bulk_buy()
         delete_buy_orders()
         for i in range(1, grids+1):
-            curr_price = curr_price*100/(100+step)
-            buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price), unit)
+            buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price - step*i)), unit)
     
     # keep ex sell orders in user data
     ex_sell_orders = []
     orders = client.get_open_orders(symbol=symbol)
     for order in orders:
         if order["side"] == "SELL":
-            ex_sell_orders.append(order["orderId"])   
-
+            ex_sell_orders.append(order["orderId"])
+    
     users = {}
     with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
         users = pickle.load(users_data) 
     users[user]["ex_sell_orders"] = ex_sell_orders
     with open('/var/www/webApp/users_data.pckl', 'wb') as users_data:
         pickle.dump(users, users_data)
-      
-    #################################################################################################
-    
-    initialize()
 
+    #################################################################################################  
+
+    initialize()
     while True:
         oldest_stream_data_from_stream_buffer = binance_com_websocket_api_manager.pop_stream_data_from_stream_buffer()
         
         if oldest_stream_data_from_stream_buffer:
             stream = json.loads(oldest_stream_data_from_stream_buffer)
-                        
+            
             if stream["e"] == "executionReport" and stream["o"] == "LIMIT" and stream["s"] == symbol and stream["X"] == "FILLED":
                 price = float(stream["p"])
+                
                 try:
                     if stream["S"] == "SELL" and stream["i"] not in ex_sell_orders:
                         print(f"\nSELL -> {price}")
@@ -150,8 +159,8 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
                             open_sells.remove(Decimal("%.2f" % price))
                         except: 
                             pass
-                        buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price*100/(100+step))), unit )               
-                        
+                        buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price - step)), unit)
+
                         if findmin_openOrders()[1] > grids:  #eğer gridden fazla buy order var ise en küçüğü iptal et
                             try:
                                 canceled = client.cancel_order(symbol=symbol, orderId=findmin_openOrders()[0] )
@@ -159,36 +168,32 @@ def bot(symbol, step, unit, grids, api, secret, bool_test, user):
                                 open_buys.remove( Decimal("%.2f" % float(canceled["price"])) )
                             except:
                                 pass
-                        
-                        if sell_order_count < 0:            
-                            bulk_buy()
-                        increment(user)   ## increment sell_count to calculate reports       
+                                    
+                        if sell_order_count == 0:
+                            initialize()
+                        increment()   ## increment sell_count to calculate reports
                         commission(float(stream["n"]))   
 
                     if stream["S"] == "BUY":
-                        print(f"\nBUY -> {price}")
+                        print(f"\nBUY -> {price} ")
                         try:
                             open_buys.remove(Decimal("%.2f" % price))
                         except: 
                             pass
-                        sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price*(100+step)/100) ), unit )
+                        sell = make_order(Client.SIDE_SELL, Decimal("%.2f" % (price + step)), unit )
                         sell_order_count += 1
-          
-                        curr_price = price
-                        for i in range(grids):
-                            curr_price = curr_price/(100+step)*100
-                        buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % curr_price ) , unit )
+                        buy = make_order(Client.SIDE_BUY, Decimal("%.2f" % (price - step*grids)) , unit )
                         commission(float(stream["n"]))   
-                        
+
                 except Exception as e:
                     print(e)
                     time.sleep(60)
                     client = Client(api, secret, testnet=bool_test)
-                    continue
-            
-            elif stream["e"] == "error":
+                    continue                    
+
+            if stream["e"] == "error":
                 print(stream)
-            
+
         else:
             time.sleep(0.5)
 

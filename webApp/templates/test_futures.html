@@ -33,7 +33,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="/kullanici#" class="brand-link">
+    <a href="/test_kullanici#" class="brand-link">
       <img src="{{url_for('static', filename='dist/img/AdminLTELogo.png')}}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
       <span class="brand-text font-weight-light">GÖKYAN BOT V.1</span>
     </a>
@@ -57,7 +57,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
           <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
           <li class="nav-item">
-            <a href="/" class="nav-link">
+            <a href="/test" class="nav-link">
               <i class="nav-icon fas fa-th"></i>
               <p>
                 Ana Sayfa
@@ -65,10 +65,10 @@ scratch. This page gets rid of all links and provides the needed markup only.
             </a>
           </li>
            <li class="nav-item">
-            <a href="/futures" class="nav-link">
+            <a href="/test_kullanici" class="nav-link">
               <i class="nav-icon far fa-circle nav-icon"></i>
               <p>
-                Futures
+                Spot
               </p>
             </a>
           </li>
@@ -249,7 +249,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
               <div class="info-box-content">
                 
                 <span class="info-box-number">
-    <form action="/bot?user={{user}}" method="POST">
+    <form action="/test_f_bot?user={{user}}" method="POST">
         <input type="submit" name="stop" value="BOTU DURDUR" class="btn btn-block btn-danger btn-lg"></input>
     </form>
 
@@ -312,23 +312,27 @@ scratch. This page gets rid of all links and provides the needed markup only.
               </div>
               <!-- /.card-header -->
               <!-- form start -->
-              <form action="/bot?user={{user}}" method="post">
+              <form action="/test_f_bot?user={{user}}" method="post">
                 <div class="card-body">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Coin Adını Girin</label>
-                    <input type="text" name="coin" class="form-control" id="exampleInputEmail1" placeholder="Coin Adı ">
+                    <input type="text" name="f_coin" class="form-control" id="exampleInputEmail1" placeholder="Coin Adı ">
                   </div>
                   <div class="form-group">
                     <label for="exampleInputPassword1">İşlem Fiyat Aralığı</label>
-                    <input type="text" name="step" class="form-control" id="exampleInputPassword1" placeholder="Fiyat Aralığı">
+                    <input type="text" name="f_step" class="form-control" id="exampleInputPassword1" placeholder="Fiyat Aralığı">
                   </div>
                   <div class="form-group">
                     <label for="exampleInputEmail1">İşlem Büyüklüğü</label>
-                    <input type="text" name="unit" class="form-control" id="exampleInputEmail1" placeholder="Coin Cinsinden Min 10 USDT">
+                    <input type="text" name="f_unit" class="form-control" id="exampleInputEmail1" placeholder="Coin Cinsinden Min 10 USDT">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Kaldıraç</label>
+                    <input type="text" name="f_leverage" class="form-control" id="exampleInputEmail1" placeholder="Kaldıraç">
                   </div>
                   <div class="form-group">
                     <label for="exampleInputEmail1">Kademe Sayısı</label>
-                    <input type="text" name="grids" class="form-control" id="exampleInputEmail1" placeholder="Kademe Sayısı">
+                    <input type="text" name="f_grids" class="form-control" id="exampleInputEmail1" placeholder="Kademe Sayısı">
                   </div>
                   
                 </div>
