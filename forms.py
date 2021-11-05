@@ -10,7 +10,7 @@ class LoginForm(FlaskForm):
 
     def validate_password(form, field):
         users = {}
-        with open('users_data.pckl', 'rb') as users_data:  
+        with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
             users = pickle.load(users_data)
 
         try:
