@@ -22,6 +22,6 @@ def reports(symbol, api, secret, bool_test, unit, step, bot_start_time ):
     for trade in curr_trades:
         if trade.side == "SELL":
             profit += step*float(trade.qty)
-            sell_count += float(trade["qty"]) / unit
+            sell_count += float(trade.qty) / unit
 
     return ("%.1f" % sell_count, "%.2f" % profit)

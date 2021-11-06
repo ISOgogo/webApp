@@ -18,7 +18,7 @@ class LoginForm(FlaskForm):
         except:
             raise ValidationError("Kullanıcı Bulunamadı! ")
             
-        if users[form.username.data]["password"] != field.data:
+        if username.get("password") != field.data:
             raise ValidationError("Hatalı Şifre")
 
 class RegisterForm(FlaskForm):

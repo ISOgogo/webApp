@@ -77,12 +77,12 @@ def test_kullanici():
     commission = 0 if not c_bot.get("commission") else "%.2f" % c_bot.get("commission")
 
     if bot_control: 
-        day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], False, c_bot["unit"], c_bot["step"], c_bot["time"])
-        trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"], False)
+        day = reports_day.reports(c_bot["symbol"], c_bot["api"], c_bot["secret"], True, c_bot["unit"], c_bot["step"], c_bot["time"])
+        trades = last_trades.trades(c_bot["symbol"], c_bot["api"], c_bot["secret"], True)
     
     try:
         sym = c_bot["ex_sell_orders"]
-        buy_stats = open_orders.open_orders(c_bot["symbol"], c_bot["api"], c_bot["secret"], False, c_bot["step"], c_bot["ex_sell_orders"], c_bot['bulk_buy_orders'])
+        buy_stats = open_orders.open_orders(c_bot["symbol"], c_bot["api"], c_bot["secret"], True, c_bot["step"], c_bot["ex_sell_orders"], c_bot['bulk_buy_orders'])
         profit_per_sell = c_bot["unit"] * c_bot["step"] 
         all_time = ( c_bot["sell_count"], "%.2f" % (profit_per_sell*c_bot["sell_count"]) )
     except:
@@ -197,15 +197,15 @@ def test_bot():
     grids = request.form.get("grids")
 
     if len(request.form) >= 4:  # formdan gelen veriler symbol, step, yuzde vb leri içerirse 4ten büyük olur
-        function = yuzdelik.bot if yuzde else futures.bot
+        function = yuzdelik.bot if yuzde else spot.bot
         bot = Process(target=function, args=(symbol, step, unit, grids, api, secret, True, user))
         time.sleep(0.3)
         bot.start()
         now = datetime.now()
         time.sleep(0.3)
 
-        users[user] = {"api": api, "secret": secret, "symbol": symbol, "step": float(step), "unit": float(unit),
-                    "grids": int(grids), "pid":bot.pid, "sell_count": 0, "time":now, "commission": 0.0}
+        users[user].update( {"symbol": symbol, "step": float(step), "unit": float(unit),
+                    "grids": int(grids), "pid":bot.pid, "sell_count": 0, "time":now, "commission": 0.0})
         write_users()
 
     c_bot = users[user]
