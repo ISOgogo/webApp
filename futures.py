@@ -39,6 +39,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
 
     ###############################    Helper Functions   ############################################## 
     def increment():
+        ## Increment sell count in main page when sell order executed
         users = {}
         with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
             users = pickle.load(users_data) 
@@ -47,6 +48,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
             pickle.dump(users, users_data)
 
     def commission(commission):
+        ## Increment commission in main page when sell order executed
         users = {}
         with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
             users = pickle.load(users_data) 
@@ -74,6 +76,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
         return result
 
     def bulk_buy():
+        ## Execute x5 quantity Buy Market order 
         nonlocal sell_order_count
         buy = client.post_order(symbol = symbol, side=OrderSide.BUY, ordertype=OrderType.MARKET, quantity=unit*5)
         price = client.get_mark_price(symbol = symbol).markPrice
@@ -87,7 +90,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
             bulk_buy_orders[sell.orderId] = price
         sell_order_count = 5
 
-        users = {}  ## Eldeki COIN miktarını doğru hesaplamak için bulk buyları kayıt et
+        users = {}  ## To Calculate holding coin amount save bulk buys
         with open('/var/www/webApp/users_data.pckl', 'rb') as users_data:  
             users = pickle.load(users_data) 
         users[user]["f_bulk_buy_orders"] = bulk_buy_orders
@@ -97,6 +100,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
         return price
 
     def findmin_openOrders():
+        ## Find min buy order to cancel it when coin price goes up
         orders = client.get_open_orders(symbol=symbol)
         price = 9999999
         orderId = None
@@ -110,6 +114,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
         return (orderId, count)
 
     def delete_buy_orders():
+        ## Delete all buy orders when user want to stop bot, sell orders will remain
         orders = client.get_open_orders(symbol=symbol)
         for order in orders:
             if order.side == "BUY":
@@ -120,6 +125,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
         
 
     def initialize():
+        ## Buy x5 amount of coin when bot started, post 5 sell order and desired amount of buy order
         nonlocal open_buys, open_sells
         open_buys = []
         open_sells = []
@@ -129,7 +135,7 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
         for i in range(1, grids+1):
             buy = make_order(OrderSide.BUY, Decimal("%.2f" % (price - step*i)), unit)
     
-    # keep ex sell orders in user data
+    ## keep ex sell orders in user data
     ex_sell_orders = []
     orders = client.get_open_orders(symbol=symbol)
     for order in orders:
@@ -151,11 +157,13 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
         
         if oldest_stream_data_from_stream_buffer:
             stream = json.loads(oldest_stream_data_from_stream_buffer)
-        
+            
+            ## When a limit order filled trade logic will work
             if stream["e"] == "ORDER_TRADE_UPDATE" and stream["o"]["o"] == "LIMIT" and stream["o"]["s"] == symbol and stream["o"]["X"] == "FILLED":
                 price = float(stream["o"]["p"])
                 
                 try:
+                    ## if its a sell order, post a buy order 1 grid below and cancel smallest buy order
                     if stream["o"]["S"] == "SELL" and stream["o"]["i"] not in ex_sell_orders:
                         print(f"\nSELL -> {price}")
                         sell_order_count -= 1
@@ -172,12 +180,15 @@ def bot(symbol, step, unit, grids, leverage, api, secret, bool_test, user ):
                                 open_buys.remove( Decimal("%.2f" % float(canceled.price)) )
                             except:
                                 pass
-                                    
+                            
+                        ## if all sell orders filled initialize the bot again           
                         if sell_order_count == 0:
                             initialize()
-                        increment()   ## increment sell_count to calculate reports
+                            
+                        increment()  
                         commission(float(stream["o"]["n"]))   
-
+                    
+                    ## if its a buy order,post a sell order 1 grid above, and a buy order 1 grid below from smallest buy order
                     if stream["o"]["S"] == "BUY":
                         print(f"\nBUY -> {price} ")
                         try:
